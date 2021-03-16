@@ -1,0 +1,106 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using System.Text.Json.Serialization
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Forms
+@inject HttpClient HttpClient
+
+@code {
+    // Lessons learned
+    // 1: usings above are important (I deleted the _Imports.razor file to be explicit)
+    // 2: Rider cannot determine necessary usings in razor editor
+    // 3: Forms in Razor is based on the EditForm component (How can I use HTML form element and onsubmit???)
+}
+
+<section class="todoapp">
+    <header class="header">
+        <h1>todos</h1>
+        <EditForm Model="@_newTodo" OnSubmit="@CreateTodo">
+            <input class="new-todo" placeholder="What needs to be done?"
+                   @bind="@_newTodo.Name" @bind:event="oninput" />
+        </EditForm>
+    </header>
+    <section class="main" style="display: block">
+        <ul class="todo-list">
+            @if (_todos is not null)
+            {
+                @foreach (var todo in _todos)
+                {
+                    <li class="@(todo.IsComplete ? "completed" : "")">
+                    <div class="view">
+                        <input class="toggle" type="checkbox" defaultChecked="@todo.IsComplete"
+                               @onchange="@(e => ToggleCompleted(todo, (bool)e.Value!))"/>
+                        <label>@todo.Name</label>
+                        <button class="destroy" @onclick="() => DeleteTodo(todo.Id)"></button>
+                    </div>
+                    </li>
+                }
+            }
+            else
+            {
+                <div>ERROR: _todos is null</div>
+            }
+        </ul>
+    </section>
+</section>
+
+@code {
+    TodoItem _newTodo = new();
+    List<TodoItem> _todos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTodos();
+    }
+
+    // GET /api/todos
+    async Task GetTodos()
+    {
+        _todos = await HttpClient.GetFromJsonAsync<List<TodoItem>>("/api/todos");
+    }
+
+    // POST /api/todos {_newTodo-payload}
+    async Task CreateTodo()
+    {
+        // TODO: Is this necessary in Blazor?
+        // e.preventDefault(); // @event:preventDefault|stopPropagation=true
+
+        // add item to the (in-memory) database
+        await HttpClient.PostAsJsonAsync("/api/todos", _newTodo);
+
+        // clear the new item binding
+        _newTodo = new(); // reset/clear
+
+        // Get all todos from the database
+        await GetTodos();
+    }
+
+    // POST /api/todos/{id} {_newTodo-payload}
+    async Task ToggleCompleted(TodoItem todo, bool isComplete)
+    {
+        await HttpClient.PostAsJsonAsync($"/api/todos/{todo.Id}",
+            new TodoItem {Id = todo.Id, Name = todo.Name, IsComplete = isComplete});
+        await GetTodos();
+    }
+
+    // DELETE /api/todos/{id}
+    async Task DeleteTodo(int id)
+    {
+        await HttpClient.DeleteAsync($"/api/todos/{id}");
+        await GetTodos();
+    }
+
+    // TODO: Share this model
+    public class TodoItem
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("isComplete")]
+        public bool IsComplete { get; set; }
+    }
+}

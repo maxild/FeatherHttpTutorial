@@ -3,17 +3,21 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <!-- <RestoreSources>
-      $(RestoreSources);
-      https://api.nuget.org/v3/index.json;
-      https://f.feedz.io/featherhttp/framework/nuget/index.json
-    </RestoreSources> -->
+    <NullableReferenceTypes>true</NullableReferenceTypes>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- MIDDLEWARE for Blazor WASM: app.UseBlazorFrameworkFiles(); -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.4" />
+
     <PackageReference Include="FeatherHttp" Version="0.1.82-alpha.g7c8518a220" />
     <!-- <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.3" /> -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="5.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- This is required to serve Blazor WASM clinet via this aspnetcore HOST (Kestrel) -->
+    <ProjectReference Include="../BlazorClient/BlazorClient.csproj" />
   </ItemGroup>
 
 </Project>
